@@ -3,7 +3,7 @@
 var map = (function($){	
 	
 	// this map module should gather top artists for a specific country, 
-	// parse all the relevant information into arrays.
+	// parse all the relevant information into an array.
 	var my = {};
 	
 	my.getTopArtistsbyCountry = function(country){

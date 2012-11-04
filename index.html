@@ -7,16 +7,34 @@
 		<script type="text/javascript" src="http://jvectormap.com/js/jquery-jvectormap-1.0.min.js"></script>
 		<script type="text/javascript" src="http://jvectormap.com/js/jquery-jvectormap-world-mill-en.js"></script>
 		<script type="text/javascript" src="http://jvectormap.com/js/jquery-jvectormap-us-aea-en.js"></script>	
-	  
+		<script type="text/javascript" src="music.js"></script>	
+	    <script type="text/javascript" src="map2.js"></script>	
+		
+		<script type="text/javascript">
+		    $(function(){
+		      $('#map').vectorMap({
+					onRegionClick: function(event,code){
+						var m = $('#map').vectorMap('get','mapObject');
+						var countryname = m.getRegionName(code);
+						var topartists = map.getTopArtistsbyCountry(countryname);			
+						$('#topartists').html(
+							function(index,oldhtml){
+								var top = "";
+								for(var i in topartists){
+									alert(topartists[i]);
+								}
+								return top;
+							}
+						);
+					}
+				});
+		    });
+		</script>
 	</head>
 	<body>
 		<div id="map" style="width: 600px; height: 400px"> </div>
-
-		<script type="text/javascript">
-		    $(function(){
-		      $('#map').vectorMap();
-		    });
-		</script>	
+		<div id="topartists" style="width: 600px; height: 400px"> </div>
+		
 	</body>
 	
 </html>

@@ -1,1 +1,0 @@
-map.getTopArtistsbyCountry("Spain");

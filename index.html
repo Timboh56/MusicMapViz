@@ -3,38 +3,82 @@
 	<head>
 		<title> Music Map Info Viz </title>
 	    <link rel="stylesheet" href="jquery-jvectormap.css" type="text/css" media="screen"/>
+	    <link rel="stylesheet" href="style.css" type="text/css" />
 		<script type="text/javascript" src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
 		<script type="text/javascript" src="http://jvectormap.com/js/jquery-jvectormap-1.0.min.js"></script>
 		<script type="text/javascript" src="http://jvectormap.com/js/jquery-jvectormap-world-mill-en.js"></script>
 		<script type="text/javascript" src="http://jvectormap.com/js/jquery-jvectormap-us-aea-en.js"></script>	
-		<script type="text/javascript" src="music.js"></script>	
-	    <script type="text/javascript" src="map2.js"></script>	
-		
+		<script type="text/javascript" src="music.js"></script>			
 		<script type="text/javascript">
+			var name = "";
+			
+			function select(name) {
+				this.name = name;
+				$("#artist_chosen").append("<h1>" + this.name + "<h1>");
+			}
+			
+			function showForCountry(items,list_type, country) {
+				$("#top_listlist").empty();
+				$("#top_listlist").append("<h2>Top " + list_type + " for " + country + "</h2>");
+				$("#top_listlist").append("<ul>");
+				for ( var i in items ) {
+					$("#top_listlist").append(items[i]);
+				}
+				$("#top_listlist").append("</ul>");
+							
+			}
+			
+			function getTopArtists(countryname){
+				map.getTop(countryname,"artists");
+			}
+			
+			function getTopTracks(countryname){
+				map.getTop(countryname,"tracks");
+			}
+			
+			if ($.browser.webkit) {
+				$('body').addClass('webkit');
+			}
 		    $(function(){
-		      $('#map').vectorMap({
-					onRegionClick: function(event,code){
-						var m = $('#map').vectorMap('get','mapObject');
-						var countryname = m.getRegionName(code);
-						var topartists = map.getTopArtistsbyCountry(countryname);			
-						$('#topartists').html(
-							function(index,oldhtml){
-								var top = "";
-								for(var i in topartists){
-									alert(topartists[i]);
-								}
-								return top;
-							}
-						);
+		      $("#map").vectorMap({
+			    
+				regionsSelectable: true,
+				regionStyle: {
+				  selected: {
+				  	fill: "#00F100"
 					}
+				  },
+				  onRegionSelected: function(event,code){
+					// collect info about region
+					// basically you want to compare an artist's popularity among all selected regions
+					// depending on the regions selected, the color gradient will be relevant 
+					// with the country with the highest ranking for the artist colored darkest
+					},
+				  onRegionClick: function(event,code){				        
+					var m = $("#map").vectorMap("get","mapObject");				        
+					var countryname = m.getRegionName(code);
+					if (countryname == "United States of America"){
+						countryname = "USA";
+					}
+					$("#top_list").empty();
+	   				$("#top_list").append(" <a href=\"#\" onclick=\"select('" + countryname + "');\" > " + countryname + "</a> ");
+									
+					$("#top_list").append(" | <a href=\"#\" onclick=\"getTopArtists('" + countryname + "'); \" > Show Top Artists </a>");
+					$("#top_list").append(" | <a href=\"#\" onclick=\"getTopTracks('" + countryname + "');\" > Show Top Tracks </a>");
+					map.getTopChart();
+				  }
 				});
 		    });
 		</script>
 	</head>
 	<body>
-		<div id="map" style="width: 600px; height: 400px"> </div>
-		<div id="topartists" style="width: 600px; height: 400px"> </div>
-		
+		<div id="artist_chosen"> Artist chosen: </div>
+		<div id="map" style="width: 600px; height: 800px;"></div>
+		<div id="top_list"> <b> Top Lists </b> 
+		</div>
+		<div id="top_listlist"> 
+		</div>
+		<div id="topchart"> </div>
 	</body>
 	
 </html>

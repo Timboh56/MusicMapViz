@@ -3,7 +3,7 @@ var map = (function ($) {
 
   var lastfm = {};
   
-   lastfm.getTop = function(country,list,show){
+   lastfm.getTop = function(code,country,list,show){
 	country.replace(/\s+/g," ");
 	var url = "http://ws.audioscrobbler.com/2.0/?method=geo.gettop" + list + "&country=" + country +  "&api_key=ddf0769305146dfa3b94043ef8e5cb8d&format=json";
 	$.ajax({
@@ -36,7 +36,7 @@ var map = (function ($) {
 		if (show == true) {
 			showForCountry(list_elems,list,country);
 		} else {
-			saveList(list_elems,list,country);
+			saveList(list_elems,code);
 		}
 	  }
 	});

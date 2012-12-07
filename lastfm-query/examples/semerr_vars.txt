@@ -1,0 +1,7 @@
+# list of possible semantic errors
+
+a.add(12);	# a does not exist
+x = a;		# a does not exist
+x = 23;
+x.add(1);	# x is not a list
+

@@ -1,0 +1,19 @@
+#simple queries example
+
+artists = ("Venetian Snares", "London Funk Allstars");
+myvar = 10
+
+#info query
+info artists where playcount > myvar and (playcount > 10 or listeners < 243)
+
+output "myoutfile.log" #switch output to file
+
+my_temp_nations = ("Italy", "Canada", "Sweden")
+my_temp_nations.add("Poland");
+
+#top tracks query
+toptracks my_temp_nations where (playcount < 340000 and (playcount > 123 or artist != "Muse"))
+
+#user events query con ridirezionamento dell'output
+userevents "sherp1", "psychodandy" >> stdout
+

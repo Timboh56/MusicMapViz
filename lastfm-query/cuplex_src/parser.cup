@@ -1,0 +1,526 @@
+/**/
+
+package it.polito.lastfm.query;
+
+import java_cup.runtime.*;
+import java.io.*;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
+import java.util.LinkedList;
+import java.util.Collection;
+import net.roarsoftware.lastfm.Artist;
+import net.roarsoftware.lastfm.Album;
+import net.roarsoftware.lastfm.Event;
+import net.roarsoftware.lastfm.Track;
+
+parser code
+{:
+	public SymbolTable symbols = SymbolTable.getInstance();
+	public OutputManager outputMan = new OutputManager();
+	public QueryEngine query = new QueryEngine();
+
+
+	public void reportError(String message, Object o){
+		System.err.println(message);
+	}
+	
+	public void reportError(String message){
+		System.err.println(message);
+	}
+
+	public void reportWarning(String message){
+		System.err.println(message);
+	}
+	
+	public void syntax_error(Symbol actual) {
+      StringBuffer m = new StringBuffer("Syntax error ");
+
+      if (cur_token.left != -1) {                
+        m.append(" at " + (actual.left+1));   
+	  m.append("/" + (actual.right+1));
+      }
+      System.err.println(m);
+    } 
+
+	
+:}
+
+action code
+{:
+:}
+
+terminal ID, STRING, INT, CM, INFO, OUTPUT, TOPALBUMS, STDOUT, EVENTS, USEREVENTS, TOPTRACKS, OR, AND, PLAYCOUNT, ADD, SMCL;
+terminal LISTENERS, COUNTRY, ATTENDANCE, ARTIST, TITLE, LBR, RBR, WHERE, REDIR, RELOP, NL, ASSIGN; 
+terminal MINUS;
+terminal COMMENT, SHOW;
+
+non terminal accepted, command_list, command;
+non terminal output, info, topalbums, events, userevents, toptracks;
+non terminal integer;
+non terminal assignment, assigned_type, assigned, assigned_list;
+non terminal string_list, output_type;
+non terminal if_album_conditions, album_conditions, album_c;
+non terminal add;
+non terminal if_info_conditions, info_conditions, info_c;
+non terminal if_events_conditions, events_conditions, events_c;
+non terminal if_toptracks_conditions, toptracks_conditions, toptracks_c;
+non terminal if_userevents_conditions, userevents_conditions, userevents_c;
+non terminal id;
+non terminal nl;
+non terminal string_list_done;
+non terminal semicolon;
+non terminal show;
+
+precedence left OR;
+precedence left AND;
+
+start with accepted;
+
+nl ::= COMMENT
+	| NL
+;
+
+accepted ::= command_list {: /*System.err.println("<accepted>");*/  :}
+;
+
+command_list ::= command_list command 
+	| command
+;
+
+command ::= output 
+	| assignment 
+	| add 
+	| info
+	| topalbums 
+	| events 
+	| userevents
+	| toptracks
+	| id
+	| show
+	| nl
+	| error:err nl {: parser.reportError("Error: command not recognized "); :}
+;
+
+show ::= SHOW nl
+	{:
+		try{
+			parser.symbols.printSymbolTable();
+		}catch(SymbolTableException e){
+			parser.reportError("Error while accessing to symbol table");
+		}
+	:}
+;
+
+id ::= ID:idval nl
+	{:
+		try{
+			parser.symbols.printSymbolContent((String)idval);
+		}catch(Exception e){
+			parser.reportError(e.getMessage(), idval);
+		}
+		
+	:}
+;
+
+output ::= OUTPUT STRING:filename nl {: parser.outputMan.switchToFile(filename.toString()); :}
+	| OUTPUT STDOUT nl {: parser.outputMan.switchToStdout(); :}
+	| OUTPUT ID:idname nl  
+	{: 
+		try {
+			parser.outputMan.switchToFile((Object)idname);
+		}catch(Exception e){
+			parser.reportError(e.getMessage());
+		} 
+	:}
+	| OUTPUT error nl {: parser.reportError("Error: bad output syntax"); :}
+;
+
+info ::= INFO string_list_done if_info_conditions:response output_type:forceout nl	{:
+			try{
+				parser.outputMan.printArtistsInfo((Collection<Artist>)response, (String)forceout);
+			}catch (Exception e){
+				parser.reportError("Error while writing to file");
+			}
+	:}
+	| INFO error output_type:forceout nl {: 
+		parser.reportError("Error: bad info command");
+	 :}
+;
+
+events ::= EVENTS string_list_done if_events_conditions:response output_type:forceout nl {:
+			parser.outputMan.printEventsInfo((HashMap<String, Collection<Event>>)response, (String)forceout);
+	:}
+	| EVENTS error output_type:forceout nl {: 
+		parser.reportError("Error: bad events command");
+	 :}
+	
+;
+
+userevents ::= USEREVENTS string_list_done if_userevents_conditions:response output_type:forceout nl {:
+			parser.outputMan.printUsereventsInfo((HashMap<String, Collection<Event>>)response, (String)forceout);
+	:}
+	| USEREVENTS error output_type:forceout nl {: 
+		parser.reportError("Error: bad userevents command");
+	 :}	
+;
+
+
+topalbums ::= TOPALBUMS string_list_done if_album_conditions:response output_type:forceout nl
+	{:
+			parser.outputMan.printAlbumsInfo((HashMap<String, Collection<Album>>)response, (String)forceout);
+	:}	
+	| TOPALBUMS error output_type:forceout nl {: 
+		parser.reportError("Error: bad topalbums command");
+	 :}
+;
+	
+toptracks ::= TOPTRACKS string_list_done if_toptracks_conditions:response output_type:forceout nl
+	{:
+			parser.outputMan.printTracksInfo((HashMap<String, Collection<Track>>)response, (String)forceout);
+	:}
+	| TOPTRACKS error output_type:forceout nl {: 
+		parser.reportError("Error: bad toptracks command");
+	 :}
+;	
+	
+
+string_list_done ::= string_list:list {: parser.query.setInputList((List<String>)list); :};
+
+string_list ::= string_list:list CM STRING:val	
+	{:	
+		try {
+			((List)list).add(val); RESULT = list; 
+		}catch (NullPointerException e){
+		}
+	:}
+	| string_list:list CM ID:idval 
+		{: 
+			try {
+	 			RESULT = parser.symbols.addId2StringList((List)list, (String)idval);
+	 	} catch(SymbolTableException e){
+	 		parser.reportError(e.getMessage());
+	 	} catch (NullPointerException e){
+		}
+	:}
+	| STRING:val {: List temp = new LinkedList(); temp.add(val); RESULT = temp; :}
+	| ID:idval 
+		{:
+		 	try {
+		 			RESULT = parser.symbols.stringListById((String)idval);
+		 	} catch(SymbolTableException e){
+		 		parser.reportError(e.getMessage());
+		 	}
+	 	 
+	 :}
+;
+
+
+if_toptracks_conditions ::= /*empty*/ {: RESULT = (HashMap<String, Collection<Track>>)parser.query.simpleTopTracksQuery(); :}
+	| WHERE toptracks_conditions:res {: RESULT = (HashMap<String, Collection<Track>>)res; :}
+; 
+
+
+if_album_conditions ::= /*empty*/ {: RESULT = (HashMap<String, Collection<Album>>)parser.query.simpleAlbumsQuery(); :}
+	| WHERE album_conditions:res {: RESULT = (HashMap<String, Collection<Album>>)res; :}
+; 
+
+if_events_conditions ::= /*empty*/ {: RESULT = (HashMap<String, Collection<Event>>)parser.query.simpleEventsQuery(); :}
+	| WHERE events_conditions:res {: RESULT = (HashMap<String, Collection<Event>>)res; :}
+;
+
+if_userevents_conditions ::= /*empty*/ {: RESULT = (HashMap<String, Collection<Event>>)parser.query.simpleUsereventsQuery(); :}
+	| WHERE userevents_conditions:res {: RESULT = (HashMap<String, Collection<Event>>)res; :}
+;
+
+userevents_conditions ::= LBR userevents_conditions:bc RBR  {: RESULT = (HashMap<String, Collection<Event>>)bc; :}
+	| userevents_conditions:c1 AND userevents_conditions:c2 {: RESULT = parser.query.eventAND((HashMap<String, Collection<Event>>)c1, (HashMap<String, Collection<Event>>)c2); :}
+	| userevents_conditions:c1 OR userevents_conditions:c2  {: RESULT = parser.query.eventOR((HashMap<String, Collection<Event>>)c1, (HashMap<String, Collection<Event>>)c2); :}
+	| userevents_c:c {: RESULT = (HashMap<String, Collection<Event>>)c; :}
+;
+
+userevents_c ::= COUNTRY RELOP:rel STRING:strval
+	{:
+		try{
+			RESULT = (HashMap<String, Collection<Event>>)parser.query.usereventsByCountry((String)rel, (String)strval);
+		} catch(Exception e){
+	 		parser.reportError(e.getMessage());
+	 	}
+	:}
+	| COUNTRY RELOP:rel ID:idval
+	{:
+		try{	
+	 		RESULT = (HashMap<String, Collection<Event>>)parser.query.usereventsByCountry((String)rel, (Object)idval);
+	 	} catch(Exception e){
+	 		parser.reportError(e.getMessage());
+	 	}
+	:}
+	| ATTENDANCE RELOP:rel integer:intval
+	{:	
+	 	RESULT = (HashMap<String, Collection<Event>>)parser.query.usereventsByAttendance((String)rel, (Integer)intval);
+	:}
+	| ATTENDANCE RELOP:rel ID:idval
+	{:	
+		try{
+	 		RESULT = (HashMap<String, Collection<Event>>)parser.query.usereventsByAttendance((String)rel, (String)idval);
+	 	} catch(Exception e){
+	 		parser.reportError(e.getMessage());
+	 	}
+	:}
+	| TITLE RELOP:rel STRING:strval
+	{:	
+		try{
+	 		RESULT = (HashMap<String, Collection<Event>>)parser.query.usereventsByTitle((String)rel, (String)strval);
+	 	} catch(Exception e){
+	 		parser.reportError(e.getMessage());
+	 	}
+	:}
+	| TITLE RELOP:rel ID:idval
+	{:	
+		try{
+	 		RESULT = (HashMap<String, Collection<Event>>)parser.query.usereventsByTitle((String)rel, (Object)idval);
+	 	} catch(Exception e){
+	 		parser.reportError(e.getMessage());
+	 	}
+	:}
+	| ARTIST RELOP:rel STRING:strval
+	{:	
+		try{
+	 		RESULT = (HashMap<String, Collection<Event>>)parser.query.usereventsByArtist((String)rel, (String)strval);
+	 	} catch(Exception e){
+	 		parser.reportError(e.getMessage());
+	 	}
+	:}
+	| ARTIST RELOP:rel ID:idval
+	{:	try{
+	 		RESULT = (HashMap<String, Collection<Event>>)parser.query.usereventsByArtist((String)rel, (Object)idval);
+	 	} catch(Exception e){
+	 		parser.reportError(e.getMessage());
+	 	}
+	:}
+
+;
+
+
+events_conditions ::= LBR events_conditions:bc RBR  {: RESULT = (HashMap<String, Collection<Event>>)bc; :}
+	| events_conditions:c1 AND events_conditions:c2 {: RESULT = parser.query.eventAND((HashMap<String, Collection<Event>>)c1, (HashMap<String, Collection<Event>>)c2); :}
+	| events_conditions:c1 OR events_conditions:c2  {: RESULT = parser.query.eventOR((HashMap<String, Collection<Event>>)c1, (HashMap<String, Collection<Event>>)c2); :}
+	| events_c:c {: RESULT = (HashMap<String, Collection<Event>>)c; :}
+;
+
+events_c ::= COUNTRY RELOP:rel STRING:strval
+	{:
+		try{
+			RESULT = (HashMap<String, Collection<Event>>)parser.query.eventsByCountry((String)rel, (String)strval);
+		} catch(Exception e){
+	 		parser.reportError(e.getMessage());
+	 	}
+	:}
+	| COUNTRY RELOP:rel ID:idval
+	{:	
+		try {
+	 		RESULT = (HashMap<String, Collection<Event>>)parser.query.eventsByCountry((String)rel, (Object)idval);
+	 	} catch(Exception e){
+	 		parser.reportError(e.getMessage());
+	 	}
+	:}
+	| ATTENDANCE RELOP:rel integer:intval
+	{:	
+	 	RESULT = (HashMap<String, Collection<Event>>)parser.query.eventsByAttendance((String)rel, (Integer)intval);
+	:}
+	| ATTENDANCE RELOP:rel ID:idval
+	{:	
+		try{
+	 		RESULT = (HashMap<String, Collection<Event>>)parser.query.eventsByAttendance((String)rel, (String)idval);
+	 	} catch(Exception e){
+	 		parser.reportError(e.getMessage());
+	 	}
+	:}
+	| TITLE RELOP:rel STRING:strval
+	{:	
+		try {
+	 		RESULT = (HashMap<String, Collection<Event>>)parser.query.eventsByTitle((String)rel, (String)strval);
+	 	} catch(Exception e){
+	 		parser.reportError(e.getMessage());
+	 	}
+	:}
+	| TITLE RELOP:rel ID:idval
+	{:	
+		try {
+	 		RESULT = (HashMap<String, Collection<Event>>)parser.query.eventsByTitle((String)rel, (Object)idval);
+	 	} catch(Exception e){
+	 		parser.reportError(e.getMessage());
+	 	}
+	:}
+
+;
+
+toptracks_conditions ::= LBR toptracks_conditions:bc RBR  {: RESULT = (HashMap<String, Collection<Track>>)bc; :}
+	| toptracks_conditions:c1 AND toptracks_conditions:c2 {: RESULT = parser.query.toptrackAND((HashMap<String, Collection<Track>>)c1, (HashMap<String, Collection<Track>>)c2); :}
+	| toptracks_conditions:c1 OR toptracks_conditions:c2  {: RESULT = parser.query.toptrackOR((HashMap<String, Collection<Track>>)c1, (HashMap<String, Collection<Track>>)c2); :}
+	| toptracks_c:c {: RESULT = (HashMap<String, Collection<Track>>)c; :}
+;
+
+album_conditions ::= LBR album_conditions:bc RBR  {: RESULT = (HashMap<String, Collection<Album>>)bc; :}
+	| album_conditions:c1 AND album_conditions:c2 {: RESULT = parser.query.albumAND((HashMap<String, Collection<Album>>)c1, (HashMap<String, Collection<Album>>)c2); :}
+	| album_conditions:c1 OR album_conditions:c2  {: RESULT = parser.query.albumOR((HashMap<String, Collection<Album>>)c1, (HashMap<String, Collection<Album>>)c2); :}
+	| album_c:c {: RESULT = (HashMap<String, Collection<Album>>)c; :}
+;
+
+if_info_conditions ::= /*empty*/ {: RESULT = (Collection<Artist>)parser.query.simpleInfoQuery(); :}
+	| WHERE info_conditions:res {: RESULT = (Collection<Artist>)res; :}
+; 
+
+info_conditions ::= LBR info_conditions:bc RBR {: RESULT = (Collection<Artist>)bc; :}
+	| info_conditions:c1 AND info_conditions:c2 {: RESULT = parser.query.infoAND((Collection<Artist>)c1, (Collection<Artist>)c2); :}	 
+	| info_conditions:c1 OR info_conditions:c2 {: RESULT = parser.query.infoOR((Collection<Artist>)c1, (Collection<Artist>)c2); :}
+	| info_c:c {: RESULT = (Collection<Artist>)c; :} 
+;
+
+toptracks_c ::= PLAYCOUNT RELOP:rel integer:intval
+	{:
+		RESULT = (HashMap<String, Collection<Track>>)parser.query.topTracksByPlaycount((String)rel, (Integer)intval);
+	:}
+	| PLAYCOUNT RELOP:rel ID:idval
+	{:	
+		try {
+	 		RESULT = (HashMap<String, Collection<Track>>)parser.query.topTracksByPlaycount((String)rel, (String)idval);
+	 	} catch(Exception e){ 
+	 		parser.reportError(e.getMessage());
+	 	}
+	:}
+	| ARTIST RELOP:rel STRING:strval
+	{:
+		try {	
+	 		RESULT = (HashMap<String, Collection<Track>>)parser.query.topTracksByArtist((String)rel, (String)strval);
+	 	} catch(Exception e){ 
+	 		parser.reportError(e.getMessage());
+	 	}
+	:}
+	| ARTIST RELOP:rel ID:idval
+	{:	
+		try { 
+	 		RESULT = (HashMap<String, Collection<Track>>)parser.query.topTracksByArtist((String)rel, (Object)idval);
+	 	} catch(Exception e){
+	 		parser.reportError(e.getMessage());
+	 	}
+	:}
+	
+;
+
+album_c ::= PLAYCOUNT RELOP:rel integer:intval
+	{:
+		RESULT = (HashMap<String, Collection<Album>>)parser.query.albumsByPlaycount((String)rel, (Integer)intval);
+	:}
+	| PLAYCOUNT RELOP:rel ID:idval
+	{:	
+		try {	
+	 		RESULT = (HashMap<String, Collection<Album>>)parser.query.albumsByPlaycount((String)rel, (String)idval);
+	 	} catch(Exception e){
+	 		parser.reportError(e.getMessage());
+	 	}
+	:}
+;
+
+info_c ::= LISTENERS RELOP:rel integer:intval 
+	{:	
+		RESULT = (Collection<Artist>)parser.query.infoByListeners((String)rel, (Integer)intval); 
+	:}
+	| LISTENERS RELOP:rel ID:idval			
+	{:	
+		try {
+	 		RESULT = (Collection<Artist>)parser.query.infoByListeners((String)rel, (String)idval);
+	 	} catch(Exception e){
+	 		parser.reportError(e.getMessage());
+	 	}
+	:}
+	| PLAYCOUNT RELOP:rel integer:intval	
+	{:	
+		RESULT = (Collection<Artist>)parser.query.infoByPlaycount((String)rel, (Integer)intval);
+	:}
+	| PLAYCOUNT RELOP:rel ID:idval			
+	{:	
+		try{
+			RESULT = (Collection<Artist>)parser.query.infoByPlaycount((String)rel, (String)idval);
+		} catch(Exception e){
+	 		parser.reportError(e.getMessage());
+	 	}
+	:}
+	
+;
+ 
+output_type ::= /* empty */ {: RESULT = null; :}
+	| REDIR STRING:filename 
+	{: 
+		RESULT = (String)filename.toString();		
+	:}
+	| REDIR ID:idname 
+	{: 
+		try {
+			RESULT = parser.symbols.getFilename((String)idname); 
+		}catch (Exception e){
+			parser.reportError(e.getMessage());
+			parser.reportWarning("Warning: bad output type; using default output");
+		}		
+	:}
+	| REDIR STDOUT {: RESULT = new String(); :}
+;
+
+integer ::= INT:val {: RESULT = val; :}
+	| MINUS INT:minusval {: RESULT = new Integer(- 1 * ((Integer)minusval).intValue()); :}
+;
+
+// variables
+
+assignment ::= ID:idname ASSIGN assigned_type:value semicolon:suppress nl 
+	{: 
+		try { 
+			parser.symbols.setNewSymbol(idname, value, (Boolean)suppress);
+		} catch (SymbolTableException e ){
+			parser.reportError(e.getMessage());
+		}
+			
+	:} 
+	| ID:idname ASSIGN error:value semicolon:suppress nl {: parser.reportError("Error in assignment"); :}
+;
+
+semicolon ::= /* empty */ {: RESULT = new Boolean(false); :}
+	| SMCL {: RESULT = new Boolean(true); :}	
+; 
+assigned_type ::= assigned:assign {: RESULT = assign; :}
+	| LBR assigned_list:assignlist RBR {: RESULT = assignlist; :}
+;
+
+assigned_list ::= assigned_list:list CM assigned:val 
+	{: 
+		List temp = new LinkedList();
+		for (Object o : (List)list)
+			temp.add(o);
+		temp.add(val);
+		RESULT = temp;
+	:} 
+	| assigned:val 
+	{: 
+		List tempList = new LinkedList();
+		tempList.add(val);
+		RESULT = tempList; 
+	:}
+;
+
+assigned ::= integer:val {: RESULT = val; :}
+	| STRING:val {: RESULT = val; :}
+	| ID:val {: RESULT = val; :}
+;
+
+add ::=	ADD:add_sym LBR assigned_list:assigned RBR semicolon:suppress nl
+	{:
+		try {
+				parser.symbols.add2List(add_sym, assigned, (Boolean)suppress);
+			} catch (SymbolTableException e ){
+				parser.reportError(e.getMessage());
+			}
+	:}
+	 | ADD:add_sym error:value semicolon:suppress nl {: parser.reportError("Error while appending to list"); :}
+;
+
+

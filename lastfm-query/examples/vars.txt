@@ -1,0 +1,16 @@
+# variable manipulation example
+
+a = 11;
+b = "mystring";
+my_list = (a, "hello", b, a);
+c = -23;
+e = ("e", 1, 0);
+my_list.add("other", c);
+my_list.add(my_list, 12, "field");
+c = a;
+a = ("replaced", "with", "a", "list");
+d = ("one", 2, "three");
+f = 4;
+d.add(f, "five", 6, "seven");
+show
+

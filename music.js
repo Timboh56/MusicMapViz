@@ -2,15 +2,15 @@ var map = (function ($) {
   'use strict';
 
   var lastfm = {};
-
-   lastfm.getTop = function(country,list){
+  
+   lastfm.getTop = function(country,list,show){
 	country.replace(/\s+/g," ");
 	var url = "http://ws.audioscrobbler.com/2.0/?method=geo.gettop" + list + "&country=" + country +  "&api_key=ddf0769305146dfa3b94043ef8e5cb8d&format=json";
 	$.ajax({
 	  type: "GET",
 	  url: url,
 	  success: function(r){
-		var list_elems = [];
+		var list_elems = {};
 		var recv_list;
 		var i;
 		if (list == "artists") {
@@ -21,13 +21,23 @@ var map = (function ($) {
 		
 		for (i in recv_list) {
 			var text = "#text";
+			var c = parseInt(i,10) + 1;		
+			var html_string;	
+			var listeners = recv_list[i].listeners;					
 			if (list == "artists") {
-				list_elems[i] = "<li> " + i + ". <img src='" + recv_list[i].image[0][text] +"' >   <a href='" + recv_list[i].url + "'> " + recv_list[i].name+"</a>, " + recv_list[i].listeners + " listeners \n </li>";
-			} else { 
-				list_elems[i] = "<li> " + i +". " + recv_list[i].name+" , " + recv_list[i].artist.name + " , " +  recv_list[i].listeners + " listeners \n </li>";
+				html_string = "<li> " + c + ". <img src='" + recv_list[i].image[0][text] +"' >   <a href='" + recv_list[i].url + "'> " + recv_list[i].name+"</a>, " + recv_list[i].listeners + " listeners \n </li>";
+			} else {
+				html_string = "<li> " + c +". " + recv_list[i].name+" , " + recv_list[i].artist.name + " , " +  recv_list[i].listeners + " listeners \n </li>";
 			}
+			list_elems["" + recv_list[i].name ] = { "html" : html_string, "listeners" : listeners };
 		}
-		showForCountry(list_elems,list,country);	  
+		
+		// callbacks
+		if (show == true) {
+			showForCountry(list_elems,list,country);
+		} else {
+			saveList(list_elems,list,country);
+		}
 	  }
 	});
 	

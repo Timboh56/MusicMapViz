@@ -1,0 +1,19 @@
+# list of possible query errors
+
+# semantic error: undeclared list of strings variable
+info undeclared_var, "U2" where playcount != 12
+
+# syntax error: missing list of artists
+topalbums where playcount > 10
+
+# semantic error: invalid relational operator with strings
+events "Coldplay" where country > "Italy"
+
+# semantic error: undeclared variable or not string variable
+userevents "me" >> invalid_out_var
+
+# syntax error: brackets
+info "U2" where (listeners > 100 or (listeners < 50 and playcount == 245)
+
+# syntax error: semicolon not allowed
+events "Bran van 3000" where country = "Canada";

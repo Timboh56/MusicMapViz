@@ -1,0 +1,43 @@
+#queries example
+
+my_outfile = "result.txt";
+bands = ("Morphine", "Depeche Mode");
+max_val = 2400;
+other_artist = "Iggy Pop";
+bands.add("Tom Waits", other_artist);
+
+another_artist = "Magda";
+another_outfile = "out.log";
+
+unwanted_country = "France";
+
+topalbums "Basement Jaxx", bands, "U2" where playcount > 987 and playcount <= max_val \
+	or playcount > 200000 >> my_outfile
+
+events "Coldplay", "Nick Cave", "Thievery Corporation", another_artist \
+	where (country != unwanted_country and (attendance > 22 or title != "2009 Osheaga Festival") \
+	and attendance < 3800) or country == "Japan"
+
+output another_outfile
+
+nation_var = unwanted_country;
+nation_list = ("Germany", "Spain");
+
+info bands, "Justice", "Aphex Twin" where playcount > 25000000 or ((playcount < 20000 \
+	or (listeners < 100 and playcount > 3400)))
+
+toptracks "Italy", nation_var, nation_list where (playcount > 300 and playcount <= 500) \
+	and artist != "Placebo" or artist == "MGMT" or (artist == "Muse" and playcount >= max_val) \
+	>> stdout
+
+show
+
+me = "sherp1";
+my_friends = ("psychodandy", "alegrella");
+my_friends.add("bearberni");
+
+output stdout
+
+userevents me, my_friends, "opaqueglass" where country == "Italy" \ or (country == "Spain" \
+	and (artist == another_artist or artist == "Blur")) and attendance <= 3700 and title != "NOfest!"
+

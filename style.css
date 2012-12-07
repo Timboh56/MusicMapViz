@@ -6,6 +6,9 @@ ul, li {
 	width: 500px;
 }
 
+a {
+	color: #99FFFF;
+}
 #map {
 	width: 800px;
 	height: 600px;

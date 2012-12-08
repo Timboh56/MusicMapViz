@@ -8,9 +8,15 @@ Object.size = function(obj) {
 
 // items will take in listener_count
 function drawBarGraph(items){         
-  var max = d3.max(items,function(d) { return d.listeners; });
-  var min = d3.min(items,function(d) { return d.listeners; });
-  var x_margin = 40;
+  
+  items.sort( function (a,b) { 
+  	 return a.listeners - b.listeners; 
+  });
+  
+  var max = items[Object.size(items) - 1].listeners;
+
+  var x_margin = 60;
+  var text_space = 50;
   
   // width and height
   var w = 250;
@@ -22,31 +28,22 @@ function drawBarGraph(items){
     
   $("#bargraph").empty();
   $("#bargraph").append("<p><h2>Listener count</h2></p>");
-  
-  items.sort(	function (a,b) { 
-	  return a.listeners - b.listeners; 
-  });
-
- 	var chart = d3.select("#top_list").append("svg")
+ 	var chart = d3.select("#bargraph").append("svg")
  		.attr("id", "chart")
-		.attr("width", w)
+		.attr("width", w + x_margin + text_space)
 		.attr("height", chart_height + 30);
 			
   	var x_scale = d3.scale.linear()
-  		.domain([x_margin, max])
+  		.domain([0, max])
    		.range([0, w]);
 		
-	var y_scale = d3.scale.ordinal()
-		.domain([0, Object.size(items)])
-		.rangeBands([0,chart_height]);
-	
   	chart.selectAll("line")
 		.data(x_scale.ticks(10))
 		.enter().append("line")
-		.attr("x1", function(d,i) { sort_ticks(i,w,x_margin) })
-		.attr("x2", function(d,i) { sort_ticks(i,w,x_margin) })
+		.attr("x1", function(d,i) { return sort_ticks(i,w,x_margin); })
+		.attr("x2", function(d,i) { return sort_ticks(i,w,x_margin); })
 		.attr("y1",0)
-		.attr("y2", chart_height + 10)
+		.attr("y2", chart_height)
 		.style("stroke", "#FFFFFF");
 
 	chart.append("line")
@@ -54,14 +51,14 @@ function drawBarGraph(items){
 		.attr("x2",x_margin)		
 		.attr("y1",0)
 		.attr("y2", chart_height + 10)
-		.style("stroke", "#FFFFFF");
+		.style("stroke", "#555555");
 	
     chart.selectAll("rect")
     	.data(items)
 	  	.enter().append("rect")
 		.attr("x", x_margin)
 	  	.attr("y", function(d, i) { 
-			return chart_height + 10 - (i) * h; 
+			return chart_height - h*i - h; 
 		})
 	  	.attr("width", function(d) {
 	  		return x_scale(d.listeners);
@@ -71,25 +68,24 @@ function drawBarGraph(items){
 	  		var rgb = colorize(d.listeners,max); 					
 	  		var data = {};
 	  		return "RGB(" + rgb + "," + rgb + ",255)";
-	  	})
+	  	});
 	
 	
   chart.selectAll("text")
     .data(items)
     .enter().append("text")
     .attr("x", function(d,i) {
-		return x_scale(d.listeners) + x_margin;
+		return x_scale(d.listeners) + x_margin + text_space;
 	})
 	.attr("y", function(d,i) {
-		return chart_height + 10 - (i) * h; 
+		return chart_height - (i) * h - 5 ; 
  	})
-	.attr("dx", -3)
-	.attr("dy", ".35em")
     .attr("text-anchor", "end")
-	.style("stroke","#FFFFFF")
-	.style("font-size","10px")
+	.style("stroke","#000000")
+	.style("fill","#FFFFFF")
+	.style("font-size","15px")
     .text(function(d,i) {
-		return d.listeners + " listeners";
+		return d.listeners + "";
 	});
 }
 

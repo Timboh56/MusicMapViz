@@ -32,7 +32,7 @@
 				} 
 				changeType("tracks");
 				track_selected = track;
-				$("#chosen_item").append(" Track chosen: <h3>" + track_selected + "</h3>");					
+				$("#chosen_item").append(" Track chosen: <b>" + track_selected + "</b>");					
 			}
 			
 			function selectArtist(artist) {
@@ -43,7 +43,7 @@
 				} 
 				changeType("artists");
 				artist_selected = artist;
-				$("#chosen_item").append(" Artist chosen: <h3>" + artist_selected + "</h3>");
+				$("#chosen_item").append(" Artist chosen: <b>" + artist_selected + "</b>");
 			}
 			
 			// show the list and save it to cache
@@ -120,6 +120,8 @@
 			
 			function resetMap() {
 				$("#chosen_item").empty();
+				$("#bargraph").empty();
+				
 				listener_count = {};
 				$("#map").vectorMap('get','mapObject').clearSelectedRegions();				
 				$("#map").vectorMap('get','mapObject').remove();
@@ -211,14 +213,16 @@
 		<form>
 			<button id="selected_button" type="button" onclick="changeContext();"> Change Context  </button> 
 			<div id="type_selected"></div>
+			Enter a track or artist: 
 			<input type="text" id="text_form"></input>
-			<button id="submit_text" type="button" onclick="submitText();"> Submit Artist or Track </button>
+			<button id="submit_text" type="button" onclick="submitText();"> Submit Query </button>
 			</form>
 			
 		<div id="chosen_item"> </div>
 		<div id="map" style="width: 600px; height: 800px;"></div>
 		<div id="top_list"> 
 			</div>
+		<div id="bargraph"></div>
 		<div id="top_listlist"> 
 		</div>
 	</body>

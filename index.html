@@ -7,7 +7,9 @@
 		<script type="text/javascript" src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
 		<script type="text/javascript" src="http://jvectormap.com/js/jquery-jvectormap-1.1.1.min.js"></script>
 		<script type="text/javascript" src="http://jvectormap.com/js/jquery-jvectormap-world-mill-en.js"></script>
-		<script type="text/javascript" src="http://jvectormap.com/js/jquery-jvectormap-us-aea-en.js"></script>	
+		<script type="text/javascript" src="http://jvectormap.com/js/jquery-jvectormap-us-aea-en.js"></script>
+		<script type="text/javascript" src="http://d3js.org/d3.v2.min.js"></script>	
+		<script type="text/javascript" src="bargraph.js"></script>	
 		<script type="text/javascript" src="music.js"></script>			
 		<script type="text/javascript">
 
@@ -28,7 +30,7 @@
 				}else {
 					resetMap();
 				} 
-				selected_type = "tracks";
+				changeType("tracks");
 				track_selected = track;
 				$("#chosen_item").append(" Track chosen: <h3>" + track_selected + "</h3>");					
 			}
@@ -39,7 +41,7 @@
 				}else {
 					resetMap();
 				} 
-				selected_type = "artists";
+				changeType("artists");
 				artist_selected = artist;
 				$("#chosen_item").append(" Artist chosen: <h3>" + artist_selected + "</h3>");
 			}
@@ -56,7 +58,11 @@
 						if ( count > 10){
 							// place holder: create some "Show more results" button
 						} else{ 
-							$("#top_listlist").append(items[i]["html"] + " <a href='#' onclick=\"selectTrack('" + i + "');\">Select </a>");
+							if (selected_type == "artists") {
+								$("#top_listlist").append(items[i]["html"] + " <a href='#' onclick=\"selectArtist('" + i + "');\">Select </a>");
+							} else {							
+								$("#top_listlist").append(items[i]["html"] + " <a href='#' onclick=\"selectTrack('" + i + "');\">Select </a>");
+							}
 						}
 					}
 					$("#top_listlist").append("</ul>");
@@ -79,24 +85,37 @@
 				$("#top_list").empty();
 				
 				if (selected_type == "artists") {
-					$("#top_list").append(artist_selected + " has " + listeners + " listeners in " + window.worldmap.getRegionName(code));
+					$("#top_list").append("Artist " + artist_selected + " has " + listeners + " listeners in " + window.worldmap.getRegionName(code));
 				} else {
-					$("#top_list").append(track_selected + " has " + listeners + " listeners in " + window.worldmap.getRegionName(code));				
+					$("#top_list").append("Track \"" + track_selected + "\" has " + listeners + " listeners in " + window.worldmap.getRegionName(code));				
 				
 				}
 				
-				var sum = 0;
+				var max = 0;
 				for ( var v in listener_count ) {
-					sum = sum + parseInt(listener_count[v]); 
+					if (parseInt(listener_count[v]) > max) {
+						max = parseInt(listener_count[v]);
+					}
 				}
 				
+				var listener_array = [];
+				var count = 0;
 				for ( var i in listener_count ) {
-					var div = 1 - parseInt(listener_count[i])/sum;
-					var rgb = parseInt(div*255);
+					listener_array[count] = { "code" : i, "listeners" : listener_count[i]};
+					var rgb = colorize(parseInt(listener_count[i]),max);
 					var data = {};
 					data[i] ="RGB(" + rgb + "," + rgb + ",255)";
 					window.worldmap.series.regions[0].setValues(data);
-				}					
+					count++;
+				}
+				
+				drawBarGraph(listener_array);					
+			}
+			
+			function colorize(count,max) {
+				var div = 1 - parseInt(count)/max;
+				var rgb = parseInt(div*255);
+				return rgb;
 			}
 			
 			function resetMap() {
@@ -111,16 +130,14 @@
 				selected = !selected;
 				resetMap();
 			}
-			
-			function getArtistSelected() {
-				return artist_selected;
-			}
 
 			function getTopArtists(code,country_name,show) {
+				selected_type = "artists";
 				map.getTop(code,country_name,"artists",show);
 			}
 			
 			function getTopTracks(code,country_name,show){
+				selected_type = "tracks";
 				map.getTop(code,country_name,"tracks",show);
 			}
 			
@@ -133,19 +150,10 @@
 				}
 			}
 			
-			function changeType() {
-				switch(selected_type)
-				{
-					case "artists":
-						selected_type = "tracks";
-						break;
-					case "tracks":
-						selected_type = "artists";
-						break;
-					default:
-						break;
-				}
-				$("#type_button").html("Comparing " + selected_type);
+			function changeType(type) {
+				resetMap();
+				selected_type = type;
+				$("#type_selected").html("Comparing " + selected_type);
 			}
 			
 			if ($.browser.webkit) {
@@ -154,6 +162,7 @@
 			
 			function generateMap(){
 			    window.worldmap = new jvm.WorldMap({
+					backgroundColor: "#444444",
 					container: $("#map"),
 					map: 'world_mill_en',
 				    series: {
@@ -161,6 +170,12 @@
 				        attribute: 'fill'
 				      }]
 				    },
+					
+					regionStyle: {
+						initial: {
+							fill: "black"						
+						}
+					},
 					onRegionClick: function(event,code){
 						var country_name = $("#map").vectorMap('get','mapObject').getRegionName(code);
 						if (country_name == "United States of America"){
@@ -194,8 +209,8 @@
 	</head>
 	<body>
 		<form>
-			<button id="type_button" type="button" onclick="changeType();">Comparing artists</button>
-			<button id="selected_button" type="button" onclick="changeContext();"> Change Context  </button>
+			<button id="selected_button" type="button" onclick="changeContext();"> Change Context  </button> 
+			<div id="type_selected"></div>
 			<input type="text" id="text_form"></input>
 			<button id="submit_text" type="button" onclick="submitText();"> Submit Artist or Track </button>
 			</form>
@@ -205,8 +220,7 @@
 		<div id="top_list"> 
 			</div>
 		<div id="top_listlist"> 
-			</div>
-			<div id="topchart"> </div>
+		</div>
 	</body>
 	
 </html>

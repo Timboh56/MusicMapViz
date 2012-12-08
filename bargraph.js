@@ -16,7 +16,7 @@ function drawBarGraph(items){
   var max = items[Object.size(items) - 1].listeners;
 
   var x_margin = 60;
-  var text_space = 50;
+  var text_space = 100;
   
   // width and height
   var w = 250;
@@ -27,7 +27,7 @@ function drawBarGraph(items){
   var chart_height = Object.size(items) * h;
     
   $("#bargraph").empty();
-  $("#bargraph").append("<p><h2>Listener count</h2></p>");
+  $("#bargraph").append("<center><p><h2> <u> Listener count </u></h2></center></p>");
  	var chart = d3.select("#bargraph").append("svg")
  		.attr("id", "chart")
 		.attr("width", w + x_margin + text_space)
@@ -44,7 +44,7 @@ function drawBarGraph(items){
 		.attr("x2", function(d,i) { return sort_ticks(i,w,x_margin); })
 		.attr("y1",0)
 		.attr("y2", chart_height)
-		.style("stroke", "#FFFFFF");
+		.style("stroke", "#555555");
 
 	chart.append("line")
 		.attr("x1",x_margin)
@@ -69,24 +69,27 @@ function drawBarGraph(items){
 	  		var data = {};
 	  		return "RGB(" + rgb + "," + rgb + ",255)";
 	  	});
-	
-	
+		
   chart.selectAll("text")
     .data(items)
     .enter().append("text")
     .attr("x", function(d,i) {
-		return x_scale(d.listeners) + x_margin + text_space;
+		return x_scale(d.listeners) + x_margin + text_space - 5;
 	})
 	.attr("y", function(d,i) {
 		return chart_height - (i) * h - 5 ; 
  	})
     .attr("text-anchor", "end")
-	.style("stroke","#000000")
-	.style("fill","#FFFFFF")
-	.style("font-size","15px")
+    .attr("font-family", "sans-serif")
+    .attr("font-size", "11px")
+	.style("fill","#FFFFFF")	
     .text(function(d,i) {
-		return d.listeners + "";
+		return d.code + ": " + d.listeners + " listeners";
 	});
+	
+	
+	
+
 }
 
 function sort_ticks(i,w,x_margin) {

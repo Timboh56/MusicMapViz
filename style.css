@@ -20,7 +20,7 @@ a {
 	background-color: #222222;
 	color: white;
 	position: absolute;
-	left: 70%;
+	left: 50%;
 	top: 1%;
     font-size: 20px;
 	font-family: Arial Black;
@@ -42,8 +42,8 @@ a {
 	background-color: #222222;
 	color: white;
 	position: fixed;
-	left: 60%;
-	top: 30%;
+	left: 50%;
+	top: 15%;
     font-size: 20px;
 	font-family: Arial Black;
 	font-size: 10px;

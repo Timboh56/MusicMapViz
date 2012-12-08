@@ -211,6 +211,7 @@
 	</head>
 	<body>
 		<form>
+			<button id="reset_button" type="button" onclick="resetMap();"> Reset </button>
 			<button id="selected_button" type="button" onclick="changeContext();"> Change Context  </button> 
 			<div id="type_selected"></div>
 			Enter a track or artist: 
@@ -218,7 +219,7 @@
 			<button id="submit_text" type="button" onclick="submitText();"> Submit Query </button>
 			</form>
 			
-		<div id="chosen_item"> </div>
+		<div id="chosen_item"> Comparing Artists </div>
 		<div id="map" style="width: 600px; height: 800px;"></div>
 		<div id="top_list"> 
 			</div>

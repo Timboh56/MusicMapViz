@@ -19,7 +19,7 @@ a {
 #top_list {
 	background-color: #222222;
 	color: white;
-	position: absolute;
+	position: fixed;
 	left: 50%;
 	top: 1%;
     font-size: 20px;
@@ -39,7 +39,7 @@ a {
 }
 
 #bargraph {
-	background-color: #222222;
+	background-color: rgb(0, 0, 0);
 	color: white;
 	position: fixed;
 	left: 50%;

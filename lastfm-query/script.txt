@@ -1,4 +1,0 @@
-
-toptracks "USA"  where artist == "Rihanna" \
-        >> stdout
-
